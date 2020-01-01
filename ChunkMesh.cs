@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -107,24 +107,28 @@ namespace MineQuest
 
         Vector2[] GetBlockUVs(Block.Type blockType, Block.Side side)
         {
-            Vector2[] uvs = null;
-
             switch (blockType)
             {
                 case Block.Type.Grass:
                     if (side == Block.Side.Top)
-                        uvs = world.textureAtlas.GetCoords(TextureType.GrassTop);
+                        return world.textureAtlas.GetCoords(TextureType.GrassTop);
                     else if (side == Block.Side.Bottom)
-                        uvs = world.textureAtlas.GetCoords(TextureType.Dirt);
+                        return world.textureAtlas.GetCoords(TextureType.Dirt);
                     else
-                        uvs = world.textureAtlas.GetCoords(TextureType.GrassSide);
-                    break;
+                        return world.textureAtlas.GetCoords(TextureType.GrassSide);
                 case Block.Type.Dirt:
-                    uvs = world.textureAtlas.GetCoords(TextureType.Dirt);
-                    break;
+                    return world.textureAtlas.GetCoords(TextureType.Dirt);
+                case Block.Type.Stone:
+                    return world.textureAtlas.GetCoords(TextureType.Stone);
+                case Block.Type.Bedrock:
+                    return world.textureAtlas.GetCoords(TextureType.Bedrock);
+                case Block.Type.Redstone:
+                    return world.textureAtlas.GetCoords(TextureType.Redstone);
+                case Block.Type.Diamond:
+                    return world.textureAtlas.GetCoords(TextureType.Diamond);
+                default:
+                    throw new ArgumentException(string.Format("Unsupported Block Type: {0}", blockType.ToString()));
             }
-
-            return uvs;
         }
 
         void AddFaceVertices(Vector3[] vertices, Vector3 normal, Vector3 blockPos)

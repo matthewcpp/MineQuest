@@ -9,6 +9,7 @@ namespace MineQuest
     {
         public Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
         public TextureAtlas textureAtlas;
+        public ChunkBuilder chunkBuilder = new ChunkBuilder();
         public Transform transform;
     }
 
@@ -32,17 +33,38 @@ namespace MineQuest
             data.transform = this.transform;
 
             chunkManager = new ChunkManager(data);
-            chunkManager.Start();
-
             chunkPool = new ChunkPool(data);
 
-            LoadChunks(Vector3Int.zero);
+            SetupWorld();
+
+            chunkManager.Start();
+        }
+
+        private void SetupWorld()
+        {
+            // determine the correct initial position for the player
+            var playerPos = player.transform.position;
+            playerPos.y = data.chunkBuilder.WorldHeight(playerPos.x, playerPos.z) + 1;
+
+            // temp...use of FPS controller
+            var characterController = player.GetComponent<CharacterController>();
+            characterController.enabled = false;
+            player.transform.position = playerPos;
+            characterController.enabled = true;
+
+
+            // load the initial player chunk
+            var initialChunkPos = GetChunkPos(playerPos);
+            EnqueueChunkPos(initialChunkPos);
+            chunkManager.SerialProcessChunks();
+            InsertNextChunkMesh();
+
+            
         }
 
         private void Update()
         {
             var playerChunkPos = GetChunkPos(player.transform.position);
-            playerChunkPos.y = 0; // temp
 
             if (playerChunkPos != previousChunkPos)
             {
@@ -87,7 +109,7 @@ namespace MineQuest
             LoadChunksRec(chunkPos, 4);
         }
 
-        private void LoadChunksRec(Vector3Int chunkPos, int depth)
+        private void EnqueueChunkPos(Vector3Int chunkPos)
         {
             if (!data.chunks.ContainsKey(chunkPos))
             {
@@ -95,6 +117,11 @@ namespace MineQuest
                 data.chunks[chunkPos] = chunk;
                 chunkManager.EnqueueChunk(chunk);
             }
+        }
+
+        private void LoadChunksRec(Vector3Int chunkPos, int depth)
+        {
+            EnqueueChunkPos(chunkPos);
 
             if (depth > 0)
             {
@@ -103,6 +130,9 @@ namespace MineQuest
 
                 LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y, chunkPos.z + 1), depth - 1);
                 LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y, chunkPos.z - 1), depth - 1);
+
+                LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y + 1, chunkPos.z), depth - 1);
+                LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y - 1, chunkPos.z), depth - 1);
             }
         }
 
