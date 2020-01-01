@@ -8,8 +8,9 @@ namespace MineQuest
 {
     class ChunkManager
     {
-        ConcurrentQueue<Chunk> chunkQueue = new ConcurrentQueue<Chunk>();
-        ConcurrentQueue<ChunkBuilder> chunkBuilderQueue = new ConcurrentQueue<ChunkBuilder>();
+        ConcurrentQueue<Chunk> populateQueue = new ConcurrentQueue<Chunk>();
+        ConcurrentQueue<Chunk> buildQueue = new ConcurrentQueue<Chunk>();
+        ConcurrentQueue<ChunkMesh> chunkMeshQueue = new ConcurrentQueue<ChunkMesh>();
 
         WorldData world;
 
@@ -24,7 +25,10 @@ namespace MineQuest
 
         public void EnqueueChunk(Chunk chunk)
         {
-            chunkQueue.Enqueue(chunk);
+            if (chunk.IsPopulated)
+                buildQueue.Enqueue(chunk);
+            else
+                populateQueue.Enqueue(chunk);
         }
 
         public bool Start()
@@ -54,24 +58,38 @@ namespace MineQuest
             return false;
         }
 
-        public ChunkBuilder GetNextChunk()
+        public ChunkMesh GetNextMesh()
         {
-            ChunkBuilder builder = null;
-            chunkBuilderQueue.TryDequeue(out builder);
-            return builder;
+            ChunkMesh chunkMesh = null;
+            chunkMeshQueue.TryDequeue(out chunkMesh);
+            return chunkMesh;
         }
 
         private void ProcessChunks()
         {
             while(isRunning)
             {
-                Chunk chunk = null;
-                if (chunkQueue.TryDequeue(out chunk))
+                while (!populateQueue.IsEmpty)
                 {
-                    var builder = new ChunkBuilder(world);
-                    builder.Build(chunk);
+                    Chunk chunk = null;
+                    if (populateQueue.TryDequeue(out chunk))
+                    {
+                        chunk.Populate();
+                        buildQueue.Enqueue(chunk);
+                    }
+                }
 
-                    chunkBuilderQueue.Enqueue(builder);
+                while(!buildQueue.IsEmpty)
+                {
+                    Chunk chunk = null;
+                    if (buildQueue.TryDequeue(out chunk))
+                    {
+
+                        var chunkMesh = new ChunkMesh(world);
+                        chunkMesh.Build(chunk);
+
+                        chunkMeshQueue.Enqueue(chunkMesh);
+                    }
                 }
 
                 Thread.Sleep(1);

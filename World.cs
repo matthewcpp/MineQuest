@@ -50,30 +50,30 @@ namespace MineQuest
                 LoadChunks(playerChunkPos);
             }
             
-            InsertNextChunk();
+            InsertNextChunkMesh();
         }
 
-        void InsertNextChunk()
+        void InsertNextChunkMesh()
         {
-            var builder = chunkManager.GetNextChunk();
+            var chunkMesh = chunkManager.GetNextMesh();
 
-            if (builder != null)
+            if (chunkMesh != null)
             {
                 var chunkGameObject = chunkPool.GetChunkObject();
 
-                builder.Chunk.GameObject = chunkGameObject;
+                chunkMesh.Chunk.GameObject = chunkGameObject;
 
-                var chunkMesh = new Mesh();
-                chunkMesh.name = builder.Chunk.ChunkPos.ToString();
-                chunkMesh.SetVertices(builder.Vertices);
-                chunkMesh.SetNormals(builder.Normals);
-                chunkMesh.SetUVs(0, builder.TexCoords);
-                chunkMesh.SetTriangles(builder.Indices, 0);
-                chunkMesh.RecalculateBounds();
+                var mesh = new Mesh();
+                mesh.name = chunkMesh.Chunk.ChunkPos.ToString();
+                mesh.SetVertices(chunkMesh.Vertices);
+                mesh.SetNormals(chunkMesh.Normals);
+                mesh.SetUVs(0, chunkMesh.TexCoords);
+                mesh.SetTriangles(chunkMesh.Indices, 0);
+                mesh.RecalculateBounds();
 
-                chunkGameObject.transform.position = builder.Chunk.WorldPos;
-                chunkGameObject.GetComponent<MeshFilter>().sharedMesh = chunkMesh;
-                chunkGameObject.GetComponent<MeshCollider>().sharedMesh = chunkMesh;
+                chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
+                chunkGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+                chunkGameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
             }
         }
 
@@ -92,7 +92,6 @@ namespace MineQuest
             if (!data.chunks.ContainsKey(chunkPos))
             {
                 var chunk = new Chunk(chunkPos);
-                chunk.Populate();
                 data.chunks[chunkPos] = chunk;
                 chunkManager.EnqueueChunk(chunk);
             }

@@ -22,8 +22,10 @@ namespace MineQuest
             ChunkPos = chunkPos;
         }
 
-        public void Populate()
+        public bool Populate()
         {
+            if (IsPopulated) return false;
+
             Blocks = new Block[World.chunkSize, World.chunkSize, World.chunkSize];
 
             for (int z = 0; z < World.chunkSize; z++)
@@ -37,11 +39,13 @@ namespace MineQuest
                     }
                 }
             }
+
+            return true;
         }
 
         Block.Type DetermineBlockType(Vector3 blockWorldPos)
         {
-            if (Random.value < 0.5f)
+            if (Mathf.PerlinNoise(blockWorldPos.x, blockWorldPos.z) > 0.5)
                 return Block.Type.Air;
 
             if (blockWorldPos.y >= World.chunkSize - 1)

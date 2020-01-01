@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MineQuest
 {
-    class ChunkBuilder
+    class ChunkMesh
     {
         public List<Vector3> Vertices { get; private set; } = new List<Vector3>();
         public List<Vector3> Normals { get; private set; } = new List<Vector3>();
@@ -14,7 +14,7 @@ namespace MineQuest
         public Chunk Chunk { get; private set; }
         private WorldData world;
 
-        public ChunkBuilder(WorldData worldData)
+        public ChunkMesh(WorldData worldData)
         {
             world = worldData;
         }
@@ -78,7 +78,7 @@ namespace MineQuest
             {
                 Chunk neighbor = GetNeighboringChunkForBlock(x, y, z);
                 
-                if (neighbor != null)
+                if (neighbor != null && neighbor.IsPopulated)
                     return neighbor.Blocks[GetNeighborBlockIndex(x), GetNeighborBlockIndex(y), GetNeighborBlockIndex(z)].IsSolid;
                 else // if neighbor is null then we have hit a world boundary 
                     return false;
