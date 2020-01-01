@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,6 +23,10 @@ namespace MineQuest
         public Material blockMaterial;
 
         private Vector3Int previousChunkPos = Vector3Int.zero;
+
+        public int buildDistance = 4;
+        public int unloadDistance = 5;
+        private List<Chunk> pruneList = new List<Chunk>();
 
         public int ChunkCount { get { return data.chunks.Count; } }
 
@@ -58,8 +61,6 @@ namespace MineQuest
             EnqueueChunkPos(initialChunkPos);
             chunkManager.SerialProcessChunks();
             InsertNextChunkMesh();
-
-            
         }
 
         private void Update()
@@ -73,30 +74,59 @@ namespace MineQuest
             }
             
             InsertNextChunkMesh();
+            PruneChunks(playerChunkPos);
         }
 
         void InsertNextChunkMesh()
         {
-            var chunkMesh = chunkManager.GetNextMesh();
+            // find the next viable mesh to build
+            ChunkMesh chunkMesh = null;
 
-            if (chunkMesh != null)
+            do {
+                chunkMesh = chunkManager.GetNextMesh();
+
+                if (chunkMesh == null)
+                    return;
+
+                // check that the chunk we are about to build has not been pruned.
+                if (data.chunks.ContainsKey(chunkMesh.Chunk.ChunkPos))
+                    break;
+            } while (true);
+
+            var chunkGameObject = chunkPool.GetChunkObject();
+            chunkGameObject.name = chunkMesh.Chunk.ChunkPos.ToString();
+
+            chunkMesh.Chunk.GameObject = chunkGameObject;
+
+            var mesh = new Mesh();
+            mesh.name = chunkMesh.Chunk.ChunkPos.ToString();
+            mesh.SetVertices(chunkMesh.Vertices);
+            mesh.SetNormals(chunkMesh.Normals);
+            mesh.SetUVs(0, chunkMesh.TexCoords);
+            mesh.SetTriangles(chunkMesh.Indices, 0);
+            mesh.RecalculateBounds();
+
+            chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
+            chunkGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+            chunkGameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
+        }
+
+        void PruneChunks(Vector3Int referencePoint)
+        {
+            foreach(var chunk in data.chunks)
             {
-                var chunkGameObject = chunkPool.GetChunkObject();
-
-                chunkMesh.Chunk.GameObject = chunkGameObject;
-
-                var mesh = new Mesh();
-                mesh.name = chunkMesh.Chunk.ChunkPos.ToString();
-                mesh.SetVertices(chunkMesh.Vertices);
-                mesh.SetNormals(chunkMesh.Normals);
-                mesh.SetUVs(0, chunkMesh.TexCoords);
-                mesh.SetTriangles(chunkMesh.Indices, 0);
-                mesh.RecalculateBounds();
-
-                chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
-                chunkGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
-                chunkGameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
+                if (Vector3Int.Distance(referencePoint, chunk.Value.ChunkPos) >= unloadDistance)
+                    pruneList.Add(chunk.Value);
             }
+
+            foreach(var chunk in pruneList)
+            {
+                data.chunks.Remove(chunk.ChunkPos);
+                chunkPool.ReturnChunkObject(chunk.GameObject);
+            }
+
+            pruneList.Clear();
+
         }
 
         private void OnDestroy()
@@ -106,7 +136,7 @@ namespace MineQuest
 
         private void LoadChunks(Vector3Int chunkPos)
         {
-            LoadChunksRec(chunkPos, 4);
+            LoadChunksRec(chunkPos, buildDistance);
         }
 
         private void EnqueueChunkPos(Vector3Int chunkPos)

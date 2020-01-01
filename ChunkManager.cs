@@ -100,7 +100,6 @@ namespace MineQuest
                 Chunk chunk = null;
                 if (buildQueue.TryDequeue(out chunk))
                 {
-
                     var chunkMesh = new ChunkMesh(world);
                     chunkMesh.Build(chunk);
 
