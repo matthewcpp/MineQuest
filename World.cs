@@ -10,6 +10,7 @@ namespace MineQuest
         public TextureAtlas textureAtlas;
         public ChunkBuilder chunkBuilder = new ChunkBuilder();
         public Transform transform;
+        public string dataDir;
     }
 
     public class World : MonoBehaviour
@@ -34,6 +35,7 @@ namespace MineQuest
         {
             data.textureAtlas = new TextureAtlas(blockMaterial);
             data.transform = this.transform;
+            data.dataDir = "D:/temp/minecraft";
 
             chunkManager = new ChunkManager(data);
             chunkPool = new ChunkPool(data);
@@ -121,6 +123,7 @@ namespace MineQuest
 
             foreach(var chunk in pruneList)
             {
+                chunkManager.PersistChunkData(chunk);
                 data.chunks.Remove(chunk.ChunkPos);
                 chunkPool.ReturnChunkObject(chunk.GameObject);
             }
@@ -161,7 +164,8 @@ namespace MineQuest
                 LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y, chunkPos.z + 1), depth - 1);
                 LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y, chunkPos.z - 1), depth - 1);
 
-                LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y + 1, chunkPos.z), depth - 1);
+                if (chunkPos.y <= ChunkBuilder.maxHeight / World.chunkSize)
+                    LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y + 1, chunkPos.z), depth - 1);
 
                 if (chunkPos.y > 0)
                     LoadChunksRec(new Vector3Int(chunkPos.x, chunkPos.y - 1, chunkPos.z), depth - 1);

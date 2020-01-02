@@ -52,7 +52,7 @@ namespace MineQuest
             return Block.Type.Air;
         }
 
-        private const int maxHeight = 150;
+        public const int maxHeight = 150;
         private const float heightSmooth = 0.01f;
         private const int heightOctaves = 4;
         private const float heightPersistence = 0.5f;
