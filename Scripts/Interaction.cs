@@ -11,30 +11,24 @@ namespace MineQuest
             world = worldData;
         }
 
-        public bool RaycastBlock(Ray ray, out RaycastHit hit, ref Chunk chunk, ref Vector3Int blockPos)
+        private Vector3Int DetermineBlockPosFromHit(Chunk chunk, Vector3 point, Vector3 normal)
         {
-            if (Physics.Raycast(ray, out hit))
-            {
-                var chunkPos = Vector3Int.FloorToInt(hit.point / World.chunkSize);
-                world.chunks.TryGetValue(chunkPos, out chunk);
-
-                var hitBlock = hit.point - (hit.normal / 2.0f); // move to  "center" of the hit block
-                hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
-                blockPos = Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
-
-                return true;
-            }
-
-            return false;
+            var hitBlock = point + (normal / 2.0f); // adjust the point to be in the center of a block
+            hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
+            return  Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
         }
 
         public bool HitBlock(Ray ray)
         {
             RaycastHit hit;
-            Chunk chunk = null;
-            Vector3Int blockPos = default;
-            if (RaycastBlock(ray, out hit, ref chunk, ref blockPos))
+            if (Physics.Raycast(ray, out hit))
             {
+                Chunk chunk = null;
+                var chunkPos = Vector3Int.FloorToInt(hit.point / World.chunkSize);
+                world.chunks.TryGetValue(chunkPos, out chunk);
+
+                // move us in towards the block we clicked.
+                var blockPos = DetermineBlockPosFromHit(chunk, hit.point, -hit.normal);
                 var block = chunk.Blocks[blockPos.x, blockPos.y, blockPos.z];
                 bool destroyBlock = false;
 
@@ -66,16 +60,14 @@ namespace MineQuest
         public bool InsertBlock(Ray ray, Block.Type blockType)
         {
             RaycastHit hit;
-            Chunk chunk = null;
-            Vector3Int blockPos = default;
-            if (RaycastBlock(ray, out hit, ref chunk, ref blockPos))
+            if (Physics.Raycast(ray, out hit))
             {
+                Chunk chunk = null;
                 var chunkPos = Vector3Int.FloorToInt(hit.point / World.chunkSize);
                 world.chunks.TryGetValue(chunkPos, out chunk);
 
-                var hitBlock = hit.point + (hit.normal / 2.0f); // move to  "center" of the neighbor block
-                hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
-                blockPos = Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
+                // move us to the adjacent block that we clicked.
+                var blockPos = DetermineBlockPosFromHit(chunk, hit.point, hit.normal);
 
                 Chunk targetChunk = null;
                 Vector3Int targetBlockPos = default;

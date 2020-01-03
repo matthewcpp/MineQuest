@@ -43,7 +43,6 @@ namespace MineQuest
 
         public void UpdateBlockOverlay(Vector3Int blockPos, Block.Overlay overlay)
         {
-            Debug.Log("UpdateBlockOverlay: " + overlay.ToString());
             Blocks[blockPos.x, blockPos.y, blockPos.z].overlay = overlay;
             IsDirty = true;
         }
