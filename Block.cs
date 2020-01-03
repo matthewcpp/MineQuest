@@ -1,6 +1,6 @@
 ﻿namespace MineQuest
 {
-    struct Block
+    public struct Block
     {
         public enum Type
         {

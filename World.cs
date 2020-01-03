@@ -10,13 +10,14 @@ namespace MineQuest
         public TextureAtlas textureAtlas;
         public ChunkBuilder chunkBuilder = new ChunkBuilder();
         public Transform transform;
+        public HashSet<Chunk> dirtyChunks = new HashSet<Chunk>();
         public string dataDir;
     }
 
     public class World : MonoBehaviour
     {
         public const int chunkSize = 16;
-        private WorldData data = new WorldData();
+        internal WorldData data = new WorldData();
         private ChunkManager chunkManager;
         private ChunkPool chunkPool;
 
@@ -28,6 +29,7 @@ namespace MineQuest
         public int buildDistance = 4;
         public int unloadDistance = 5;
         private List<Chunk> pruneList = new List<Chunk>();
+        
 
         public int ChunkCount { get { return data.chunks.Count; } }
 
@@ -51,18 +53,17 @@ namespace MineQuest
             var playerPos = player.transform.position;
             playerPos.y = data.chunkBuilder.WorldHeight(playerPos.x, playerPos.z) + 1;
 
+            // load the initial player chunk
+            var initialChunkPos = GetChunkPos(playerPos);
+            LoadChunks(initialChunkPos);
+            chunkManager.SerialProcessChunks();
+            InsertNextChunkMesh();
+
             // temp...use of FPS controller
             var characterController = player.GetComponent<CharacterController>();
             characterController.enabled = false;
             player.transform.position = playerPos;
             characterController.enabled = true;
-
-
-            // load the initial player chunk
-            var initialChunkPos = GetChunkPos(playerPos);
-            EnqueueChunkPos(initialChunkPos);
-            chunkManager.SerialProcessChunks();
-            InsertNextChunkMesh();
         }
 
         private void Update()
@@ -77,6 +78,28 @@ namespace MineQuest
             
             InsertNextChunkMesh();
             PruneChunks(playerChunkPos);
+        }
+
+        private void LateUpdate()
+        {
+            UpdateDirtyChunks();
+        }
+
+        public bool RaycastBlock(Ray ray, out RaycastHit hit, ref Chunk chunk, ref Vector3Int blockPos)
+        {
+            if (Physics.Raycast(ray, out hit))
+            {
+                var chunkPos = Vector3Int.FloorToInt(hit.point / World.chunkSize);
+                data.chunks.TryGetValue(chunkPos, out chunk);
+
+                var hitBlock = hit.point - (hit.normal / 2.0f); // move to  "center" of the hit block
+                hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
+                blockPos = Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
+
+                return true;
+            }
+
+            return false;
         }
 
         void InsertNextChunkMesh()
@@ -113,6 +136,32 @@ namespace MineQuest
             chunkGameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
         }
 
+        private void UpdateDirtyChunks()
+        {
+            foreach (var chunk in data.dirtyChunks)
+            {
+                if (!chunk.IsPopulated) continue;
+
+                var chunkMesh = new ChunkMesh(data);
+                chunkMesh.Build(chunk);
+
+                var mesh = chunk.GameObject.GetComponent<MeshFilter>().sharedMesh;
+                mesh.Clear();
+
+                mesh.SetVertices(chunkMesh.Vertices);
+                mesh.SetNormals(chunkMesh.Normals);
+                mesh.SetUVs(0, chunkMesh.TexCoords);
+                mesh.SetTriangles(chunkMesh.Indices, 0);
+                mesh.RecalculateBounds();
+
+                var meshCollider = chunk.GameObject.GetComponent<MeshCollider>();
+                meshCollider.sharedMesh = null;
+                meshCollider.sharedMesh = mesh;
+            }
+
+            data.dirtyChunks.Clear();
+        }
+
         void PruneChunks(Vector3Int referencePoint)
         {
             foreach(var chunk in data.chunks)
@@ -146,7 +195,7 @@ namespace MineQuest
         {
             if (!data.chunks.ContainsKey(chunkPos))
             {
-                var chunk = new Chunk(chunkPos);
+                var chunk = new Chunk(chunkPos, data);
                 data.chunks[chunkPos] = chunk;
                 chunkManager.EnqueueChunk(chunk);
             }
