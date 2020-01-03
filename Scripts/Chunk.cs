@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace MineQuest
             set { SetDirty(value); } 
         }
 
-        private WorldData world;
+        internal WorldData world;
 
         internal  Chunk(Vector3Int chunkPos, WorldData worldData)
         {
@@ -118,6 +119,12 @@ namespace MineQuest
                     }
                 }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool BlockPosIsInChunk(int x, int y, int z)
+        {
+            return (x >= 0 && x < World.chunkSize) && (y >= 0 && y < World.chunkSize) && (z >= 0 && z < World.chunkSize);
         }
     }
 }

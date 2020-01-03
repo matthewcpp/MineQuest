@@ -72,36 +72,7 @@ namespace MineQuest
             meshCollider.sharedMesh = mesh;
         }
 
-        int GetNeighborChunkOffset(int value)
-        {
-            if (value < 0)
-                return -1;
-            else if (value >= World.chunkSize)
-                return 1;
-            else
-                return 0;
-        }
 
-        Chunk GetNeighboringChunkForBlock(int x, int y, int z)
-        {
-            Vector3Int neighborChunkPos = Chunk.ChunkPos + new Vector3Int(GetNeighborChunkOffset(x), GetNeighborChunkOffset(y), GetNeighborChunkOffset(z));
-
-            Chunk neighbor = null;
-            world.chunks.TryGetValue(neighborChunkPos, out neighbor);
-
-            return neighbor;
-        }
-
-        /** Gets the index of a value in the neighboring block for the given value. */
-        int GetNeighborBlockIndex(int value)
-        {
-            if (value < 0)
-                return World.chunkSize - 1;
-            else if (value >= World.chunkSize)
-                return 0;
-            else
-                return value;
-        }
 
         /**
          * Determines if the neighboring block with the given position is solid.
@@ -111,12 +82,12 @@ namespace MineQuest
         bool BlockNeighborIsSolid(int x, int y, int z)
         {
             // neighboring block is actually in another chunk
-            if ((x < 0 || x >= World.chunkSize) || (y < 0 || y >= World.chunkSize) || (z < 0 || z >= World.chunkSize))
+            if (!Chunk.BlockPosIsInChunk(x,y,z))
             {
-                Chunk neighbor = GetNeighboringChunkForBlock(x, y, z);
+                var neighbor = Util.GetNeighboringChunkForBlock(Chunk, x, y, z);
                 
                 if (neighbor != null && neighbor.IsPopulated)
-                    return neighbor.Blocks[GetNeighborBlockIndex(x), GetNeighborBlockIndex(y), GetNeighborBlockIndex(z)].IsSolid;
+                    return neighbor.Blocks[Util.GetNeighborBlockIndex(x), Util.GetNeighborBlockIndex(y), Util.GetNeighborBlockIndex(z)].IsSolid;
                 else // if neighbor is null then we have hit a world boundary 
                     return false;
             }
