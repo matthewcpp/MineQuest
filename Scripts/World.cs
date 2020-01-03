@@ -29,6 +29,8 @@ namespace MineQuest
         public int buildDistance = 4;
         public int unloadDistance = 5;
         private List<Chunk> pruneList = new List<Chunk>();
+
+        public Interaction Interaction { get; private set; }
         
 
         public int ChunkCount { get { return data.chunks.Count; } }
@@ -41,6 +43,7 @@ namespace MineQuest
 
             chunkManager = new ChunkManager(data);
             chunkPool = new ChunkPool(data);
+            Interaction = new Interaction(data);
 
             SetupWorld();
 
@@ -85,23 +88,6 @@ namespace MineQuest
             UpdateDirtyChunks();
         }
 
-        public bool RaycastBlock(Ray ray, out RaycastHit hit, ref Chunk chunk, ref Vector3Int blockPos)
-        {
-            if (Physics.Raycast(ray, out hit))
-            {
-                var chunkPos = Vector3Int.FloorToInt(hit.point / World.chunkSize);
-                data.chunks.TryGetValue(chunkPos, out chunk);
-
-                var hitBlock = hit.point - (hit.normal / 2.0f); // move to  "center" of the hit block
-                hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
-                blockPos = Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
-
-                return true;
-            }
-
-            return false;
-        }
-
         void InsertNextChunkMesh()
         {
             // find the next viable mesh to build
@@ -119,21 +105,11 @@ namespace MineQuest
             } while (true);
 
             var chunkGameObject = chunkPool.GetChunkObject();
-            chunkGameObject.name = chunkMesh.Chunk.ChunkPos.ToString();
 
             chunkMesh.Chunk.GameObject = chunkGameObject;
-
-            var mesh = new Mesh();
-            mesh.name = chunkMesh.Chunk.ChunkPos.ToString();
-            mesh.SetVertices(chunkMesh.Vertices);
-            mesh.SetNormals(chunkMesh.Normals);
-            mesh.SetUVs(0, chunkMesh.TexCoords);
-            mesh.SetTriangles(chunkMesh.Indices, 0);
-            mesh.RecalculateBounds();
-
+            chunkGameObject.name = chunkMesh.Chunk.ChunkPos.ToString();
+            chunkMesh.AttachMesh(chunkGameObject);
             chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
-            chunkGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
-            chunkGameObject.GetComponent<MeshCollider>().sharedMesh = mesh;
         }
 
         private void UpdateDirtyChunks()
@@ -144,19 +120,7 @@ namespace MineQuest
 
                 var chunkMesh = new ChunkMesh(data);
                 chunkMesh.Build(chunk);
-
-                var mesh = chunk.GameObject.GetComponent<MeshFilter>().sharedMesh;
-                mesh.Clear();
-
-                mesh.SetVertices(chunkMesh.Vertices);
-                mesh.SetNormals(chunkMesh.Normals);
-                mesh.SetUVs(0, chunkMesh.TexCoords);
-                mesh.SetTriangles(chunkMesh.Indices, 0);
-                mesh.RecalculateBounds();
-
-                var meshCollider = chunk.GameObject.GetComponent<MeshCollider>();
-                meshCollider.sharedMesh = null;
-                meshCollider.sharedMesh = mesh;
+                chunkMesh.UpdateMesh();
             }
 
             data.dirtyChunks.Clear();

@@ -6,10 +6,11 @@ namespace MineQuest
 {
     class ChunkMesh
     {
-        public List<Vector3> Vertices { get; private set; } = new List<Vector3>();
-        public List<Vector3> Normals { get; private set; } = new List<Vector3>();
-        public List<Vector2> TexCoords { get; private set; } = new List<Vector2>();
-        public List<int> Indices { get; private set; } = new List<int>();
+        public List<Vector3> Vertices { get;} = new List<Vector3>();
+        public List<Vector3> Normals { get;} = new List<Vector3>();
+        public List<Vector2> TexCoords { get;} = new List<Vector2>();
+        public List<Vector2> OverlayTexCoords { get;} = new List<Vector2>();
+        public List<int> Indices { get;} = new List<int>();
 
         public Chunk Chunk { get; private set; }
         private WorldData world;
@@ -33,6 +34,42 @@ namespace MineQuest
                     }
                 }
             }
+        }
+
+        // Note: this can only be called from the main thread
+        public void AttachMesh(GameObject chunkGameObject)
+        {
+            var mesh = new Mesh();
+            mesh.name = Chunk.ChunkPos.ToString();
+            SetMeshData(mesh);
+        }
+
+        public void UpdateMesh()
+        {
+            var mesh = Chunk.GameObject.GetComponent<MeshFilter>().sharedMesh;
+            mesh.Clear();
+            SetMeshData(mesh);
+        }
+
+        private void SetMeshData(Mesh mesh)
+        {
+            mesh.SetVertices(Vertices);
+            mesh.SetNormals(Normals);
+            mesh.SetUVs(0, TexCoords);
+            mesh.SetUVs(1, OverlayTexCoords);
+            mesh.SetTriangles(Indices, 0);
+            mesh.RecalculateBounds();
+
+            var meshCollider = Chunk.GameObject.GetComponent<MeshCollider>();
+            var meshFilter = Chunk.GameObject.GetComponent<MeshFilter>();
+
+            if (meshFilter.sharedMesh == null)
+                meshFilter.sharedMesh = mesh;
+
+            if (meshCollider.sharedMesh != null)
+                meshCollider.sharedMesh = null;
+
+            meshCollider.sharedMesh = mesh;
         }
 
         int GetNeighborChunkOffset(int value)
@@ -131,6 +168,25 @@ namespace MineQuest
             }
         }
 
+        Vector2[] GetOverlayUVs(Block.Overlay overlayType)
+        {
+            switch(overlayType)
+            {
+                case Block.Overlay.None:
+                    return world.textureAtlas.GetCoords(TextureType.Crack0);
+                case Block.Overlay.Crack1:
+                    return world.textureAtlas.GetCoords(TextureType.Crack1);
+                case Block.Overlay.Crack2:
+                    return world.textureAtlas.GetCoords(TextureType.Crack2);
+                case Block.Overlay.Crack3:
+                    return world.textureAtlas.GetCoords(TextureType.Crack3);
+                case Block.Overlay.Crack4:
+                    return world.textureAtlas.GetCoords(TextureType.Crack4);
+                default:
+                    throw new ArgumentException(string.Format("Unsupported Overlay Type: {0}", overlayType.ToString()));
+            }
+        }
+
         void AddFaceVertices(Vector3[] vertices, Vector3 normal, Vector3 blockPos)
         {
             int indexBase = Vertices.Count;
@@ -177,6 +233,12 @@ namespace MineQuest
             TexCoords.Add(blockUvs[2]);
             TexCoords.Add(blockUvs[0]);
             TexCoords.Add(blockUvs[1]);
+
+            var overlayUvs = GetOverlayUVs(Chunk.Blocks[blockX, blockY, blockZ].overlay);
+            OverlayTexCoords.Add(overlayUvs[3]);
+            OverlayTexCoords.Add(overlayUvs[2]);
+            OverlayTexCoords.Add(overlayUvs[0]);
+            OverlayTexCoords.Add(overlayUvs[1]);
         }
 
         static Vector3[] frontVertices = new Vector3[] { new Vector3(0.0f, 1.0f, 1.0f), new Vector3(1.0f, 1.0f, 1.0f), new Vector3(1.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, 1.0f) };

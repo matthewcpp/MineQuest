@@ -2,9 +2,14 @@
 {
     public struct Block
     {
-        public enum Type
+        public enum Type : short
         {
             Air, Grass, Dirt, Stone, Bedrock, Redstone, Diamond
+        }
+
+        public enum Overlay: short
+        {
+            None, Crack1, Crack2, Crack3, Crack4
         }
 
         public enum Side
@@ -13,6 +18,7 @@
         }
 
         public Type type;
+        public Overlay overlay;
 
         public bool IsSolid
         {

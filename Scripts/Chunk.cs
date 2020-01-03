@@ -40,6 +40,13 @@ namespace MineQuest
             MarkNeighborsDirty(blockPos);
         }
 
+        public void UpdateBlockOverlay(Vector3Int blockPos, Block.Overlay overlay)
+        {
+            Debug.Log("UpdateBlockOverlay: " + overlay.ToString());
+            Blocks[blockPos.x, blockPos.y, blockPos.z].overlay = overlay;
+            IsDirty = true;
+        }
+
         void MarkNeighborsDirty(Vector3Int blockPos)
         {
             Chunk neighbor;
@@ -87,7 +94,8 @@ namespace MineQuest
                 {
                     for (int z = 0; z < World.chunkSize; z++)
                     {
-                        writer.Write((int)Blocks[x, y, z].type);
+                        writer.Write((short)Blocks[x, y, z].type);
+                        writer.Write((short)Blocks[x, y, z].overlay);
                     }
                 }
             }
@@ -105,7 +113,8 @@ namespace MineQuest
                 {
                     for (int z = 0; z < World.chunkSize; z++)
                     {
-                        Blocks[x, y, z].type = (Block.Type)reader.ReadInt32();
+                        Blocks[x, y, z].type = (Block.Type)reader.ReadInt16();
+                        Blocks[x, y, z].overlay = (Block.Overlay)reader.ReadInt16();
                     }
                 }
             }
