@@ -33,9 +33,16 @@ namespace MineQuest
             world = worldData;
         }
 
+        /// <summary>
+        /// Updates the type for the block at the given position, resets the overlay value, and marks the chunk as dirty.
+        /// </summary>
+        /// <param name="blockPos">Block position to update</param>
+        /// <param name="type">New block type</param>
         public void UpdateBlockType(Vector3Int blockPos, Block.Type type)
         {
             Blocks[blockPos.x, blockPos.y, blockPos.z].type = type;
+            Blocks[blockPos.x, blockPos.y, blockPos.z].overlay = Block.Overlay.None;
+
             IsDirty = true;
 
             MarkNeighborsDirty(blockPos);
