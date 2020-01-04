@@ -29,6 +29,7 @@ namespace MineQuest
         public int buildDistance = 4;
         public int unloadDistance = 5;
         private List<Chunk> pruneList = new List<Chunk>();
+        private bool worldSetup = false;
 
         public Interaction Interaction { get; private set; }
         
@@ -60,7 +61,7 @@ namespace MineQuest
             var initialChunkPos = GetChunkPos(playerPos);
             LoadChunks(initialChunkPos);
             chunkManager.SerialProcessChunks();
-            InsertNextChunkMesh();
+            while(InsertNextChunkMesh());
 
             // temp...use of FPS controller
             var characterController = player.GetComponent<CharacterController>();
@@ -88,7 +89,7 @@ namespace MineQuest
             UpdateDirtyChunks();
         }
 
-        void InsertNextChunkMesh()
+        bool InsertNextChunkMesh()
         {
             // find the next viable mesh to build
             ChunkMesh chunkMesh = null;
@@ -97,7 +98,7 @@ namespace MineQuest
                 chunkMesh = chunkManager.GetNextMesh();
 
                 if (chunkMesh == null)
-                    return;
+                    return false;
 
                 // check that the chunk we are about to build has not been pruned.
                 if (data.chunks.ContainsKey(chunkMesh.Chunk.ChunkPos))
@@ -110,6 +111,8 @@ namespace MineQuest
             chunkGameObject.name = chunkMesh.Chunk.ChunkPos.ToString();
             chunkMesh.AttachMesh(chunkGameObject);
             chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
+
+            return true;
         }
 
         private void UpdateDirtyChunks()

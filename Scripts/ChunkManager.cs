@@ -119,7 +119,7 @@ namespace MineQuest
 
         private void ProcessChunks()
         {
-            do
+            while (true)
             {
                 // note this could trigger writing to disk if cache is full
                 if (!persistQueue.IsEmpty)
@@ -186,7 +186,8 @@ namespace MineQuest
                     continue;
                 }
 
-            } while (false);
+                break;
+            };
         }
     }
 
