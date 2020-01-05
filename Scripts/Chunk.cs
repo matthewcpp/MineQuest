@@ -16,7 +16,8 @@ namespace MineQuest
 
         public bool IsPopulated { get { return Blocks != null; } }
 
-        public GameObject GameObject {get;set;}
+        public GameObject SolidGameObject {get;set;}
+        public GameObject TransparentGameObject { get; set; }
 
         public Vector3Int ChunkPos { get; set; }
 

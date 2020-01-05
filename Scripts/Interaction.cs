@@ -15,7 +15,7 @@ namespace MineQuest
         {
             var hitBlock = point + (normal / 2.0f); // adjust the point to be in the center of a block
             hitBlock = new Vector3(Mathf.Floor(hitBlock.x), Mathf.Floor(hitBlock.y), Mathf.Floor(hitBlock.z));
-            return  Vector3Int.FloorToInt(hitBlock - chunk.GameObject.transform.position);
+            return  Vector3Int.FloorToInt(hitBlock - chunk.SolidGameObject.transform.position);
         }
 
         public bool HitBlock(Ray ray)
@@ -34,6 +34,9 @@ namespace MineQuest
 
                 switch(block.type)
                 {
+                    case Block.Type.Water:
+                        return false;
+
                     case Block.Type.Dirt:
                     case Block.Type.Grass:
                         destroyBlock = (block.overlay == Block.Overlay.Crack2);

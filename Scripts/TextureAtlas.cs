@@ -5,16 +5,19 @@ namespace MineQuest
     enum TextureType
     {
         GrassTop, GrassSide, Dirt, Stone, Bedrock, Redstone, Diamond,
-        Crack0, Crack1, Crack2, Crack3, Crack4
+        Crack0, Crack1, Crack2, Crack3, Crack4,
+        Water
     }
 
     class TextureAtlas
     {
-        public Material BlockMaterial { get; private set; }
+        public Material BlockMaterial { get; }
+        public Material TransparentBlockMaterial { get; }
 
-        public TextureAtlas(Material blockMaterial)
+        public TextureAtlas(Material blockMaterial, Material transparentBlockMaterial)
         {
             BlockMaterial = blockMaterial;
+            TransparentBlockMaterial = transparentBlockMaterial;
         }
         
         public Vector2[] GetCoords(TextureType type)
@@ -45,6 +48,8 @@ namespace MineQuest
                     return crack3;
                 case TextureType.Crack4:
                     return crack4;
+                case TextureType.Water:
+                    return water;
                 default:
                     throw new ArgumentException(string.Format("Unsupported Texture Type: {0}", type.ToString()));
             }
@@ -63,5 +68,7 @@ namespace MineQuest
         private static Vector2[] crack2 = { new Vector2(0.0625f,0f),  new Vector2(0.125f,0f), new Vector2(0.0625f,0.0625f), new Vector2(0.125f,0.0625f)};
         private static Vector2[] crack3 = { new Vector2(0.125f,0f),  new Vector2(0.1875f,0f), new Vector2(0.125f,0.0625f), new Vector2(0.1875f,0.0625f)};
         private static Vector2[] crack4 = { new Vector2(0.1875f,0f),  new Vector2(0.25f,0f), new Vector2(0.1875f,0.0625f), new Vector2(0.25f,0.0625f)};
-    }
+
+        private static Vector2[] water = { new Vector2(0.8125f,0.1875f),  new Vector2(0.875f,0.1875f), new Vector2(0.8125f,0.25f), new Vector2(0.875f,0.25f)};
+}
 }

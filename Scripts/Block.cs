@@ -4,7 +4,7 @@
     {
         public enum Type : short
         {
-            Air, Grass, Dirt, Stone, Bedrock, Redstone, Diamond
+            Air, Grass, Dirt, Stone, Bedrock, Redstone, Diamond, Water
         }
 
         public enum Overlay: short
@@ -22,7 +22,7 @@
 
         public bool IsSolid
         {
-            get { return this.type != Type.Air; }
+            get { return this.type != Type.Air && this.type != Type.Water; }
         }
     }
 }

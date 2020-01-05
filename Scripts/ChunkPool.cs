@@ -7,12 +7,11 @@ namespace MineQuest
     class ChunkPool
     {
         Queue<GameObject> chunkObjectPool = new Queue<GameObject>();
+        Transform worldTransform;
 
-        WorldData world;
-
-        public ChunkPool(WorldData worldData)
+        internal ChunkPool(Transform worldTransform)
         {
-            world = worldData;
+            this.worldTransform = worldTransform;
         }
 
         public GameObject GetChunkObject()
@@ -27,8 +26,8 @@ namespace MineQuest
             else
             {
                 chunkObject = new GameObject();
-                chunkObject.transform.parent = world.transform;
-                chunkObject.AddComponent<MeshRenderer>().material = world.textureAtlas.BlockMaterial;
+                chunkObject.transform.parent = worldTransform;
+                chunkObject.AddComponent<MeshRenderer>();
                 chunkObject.AddComponent<MeshFilter>();
                 chunkObject.AddComponent<MeshCollider>();
             }

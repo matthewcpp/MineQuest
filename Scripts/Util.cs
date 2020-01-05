@@ -24,7 +24,7 @@ namespace MineQuest
                     
                     return true;
                 }
-                else
+                else // neighbor or unloaded chunk
                 {
                     actualChunk = default;
                     actualBlockPos = default;

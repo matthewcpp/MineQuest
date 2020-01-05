@@ -11,6 +11,7 @@ namespace MineQuest
         public ChunkBuilder chunkBuilder = new ChunkBuilder();
         public Transform transform;
         public HashSet<Chunk> dirtyChunks = new HashSet<Chunk>();
+        public ChunkPool chunkPool;
         public string dataDir;
     }
 
@@ -19,17 +20,16 @@ namespace MineQuest
         public const int chunkSize = 16;
         internal WorldData data = new WorldData();
         private ChunkManager chunkManager;
-        private ChunkPool chunkPool;
 
         public GameObject player;
         public Material blockMaterial;
+        public Material transparentBlockMaterial;
 
         private Vector3Int previousChunkPos = Vector3Int.zero;
 
         public int buildDistance = 4;
         public int unloadDistance = 5;
         private List<Chunk> pruneList = new List<Chunk>();
-        private bool worldSetup = false;
 
         public Interaction Interaction { get; private set; }
         
@@ -38,12 +38,12 @@ namespace MineQuest
 
         private void Start()
         {
-            data.textureAtlas = new TextureAtlas(blockMaterial);
+            data.textureAtlas = new TextureAtlas(blockMaterial, transparentBlockMaterial);
             data.transform = this.transform;
             data.dataDir = "D:/temp/minecraft";
+            data.chunkPool = new ChunkPool(this.transform);
 
             chunkManager = new ChunkManager(data);
-            chunkPool = new ChunkPool(data);
             Interaction = new Interaction(data);
 
             SetupWorld();
@@ -57,7 +57,7 @@ namespace MineQuest
             var playerPos = player.transform.position;
             playerPos.y = data.chunkBuilder.WorldHeight(playerPos.x, playerPos.z) + 1;
 
-            // load the initial player chunk
+            // load the initial chunks around the player
             var initialChunkPos = GetChunkPos(playerPos);
             LoadChunks(initialChunkPos);
             chunkManager.SerialProcessChunks();
@@ -105,12 +105,7 @@ namespace MineQuest
                     break;
             } while (true);
 
-            var chunkGameObject = chunkPool.GetChunkObject();
-
-            chunkMesh.Chunk.GameObject = chunkGameObject;
-            chunkGameObject.name = chunkMesh.Chunk.ChunkPos.ToString();
-            chunkMesh.AttachMesh(chunkGameObject);
-            chunkGameObject.transform.position = chunkMesh.Chunk.WorldPos;
+            chunkMesh.Attach();
 
             return true;
         }
@@ -141,7 +136,12 @@ namespace MineQuest
             {
                 chunkManager.PersistChunkData(chunk);
                 data.chunks.Remove(chunk.ChunkPos);
-                chunkPool.ReturnChunkObject(chunk.GameObject);
+
+                if (chunk.SolidGameObject)
+                    data.chunkPool.ReturnChunkObject(chunk.SolidGameObject);
+
+                if (chunk.TransparentGameObject)
+                    data.chunkPool.ReturnChunkObject(chunk.TransparentGameObject);
             }
 
             pruneList.Clear();
