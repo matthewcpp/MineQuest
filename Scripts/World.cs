@@ -12,7 +12,7 @@ namespace MineQuest
         public Transform transform;
         public HashSet<Chunk> dirtyChunks = new HashSet<Chunk>();
         public ChunkPool chunkPool;
-        public string dataDir;
+        public Database database = new Database();
     }
 
     public class World : MonoBehaviour
@@ -40,7 +40,6 @@ namespace MineQuest
         {
             data.textureAtlas = new TextureAtlas(blockMaterial, transparentBlockMaterial);
             data.transform = this.transform;
-            data.dataDir = "D:/temp/minecraft";
             data.chunkPool = new ChunkPool(this.transform);
 
             chunkManager = new ChunkManager(data);
@@ -54,6 +53,7 @@ namespace MineQuest
         private void SetupWorld()
         {
             // determine the correct initial position for the player
+            // todo: remove chunk builder from here.
             var playerPos = player.transform.position;
             playerPos.y = data.chunkBuilder.WorldHeight(playerPos.x, playerPos.z) + 1;
 
@@ -114,8 +114,6 @@ namespace MineQuest
         {
             foreach (var chunk in data.dirtyChunks)
             {
-                if (!chunk.IsPopulated) continue;
-
                 var chunkMesh = new ChunkMesh(data);
                 chunkMesh.Build(chunk);
                 chunkMesh.UpdateMesh();

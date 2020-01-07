@@ -1,7 +1,5 @@
-﻿using System.IO;
-using System.Threading;
+﻿using System.Threading;
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 using UnityEngine;
 
@@ -14,7 +12,7 @@ namespace MineQuest
         ConcurrentQueue<Chunk> buildQueue = new ConcurrentQueue<Chunk>();
         ConcurrentQueue<ChunkMesh> chunkMeshQueue = new ConcurrentQueue<ChunkMesh>();
 
-        private const int cacheSize = (1024 * 1024 * 1) / (World.chunkSize * World.chunkSize * World.chunkSize * sizeof(int));
+        private const int cacheSize = (1024 * 1024 * 2) / (World.chunkSize * World.chunkSize * World.chunkSize * sizeof(int));
 
         LruCache<Vector3Int, Chunk> chunkCache = new LruCache<Vector3Int, Chunk>(cacheSize);
 
@@ -38,10 +36,7 @@ namespace MineQuest
 
         public void EnqueueChunk(Chunk chunk)
         {
-            if (chunk.IsPopulated)
-                buildQueue.Enqueue(chunk);
-            else
-                populateQueue.Enqueue(chunk);
+            populateQueue.Enqueue(chunk);
         }
 
         public void PersistChunkData(Chunk chunk)
@@ -76,21 +71,9 @@ namespace MineQuest
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string ChunkFileName(Vector3Int chunkPos)
-        {
-            return string.Format("{0}_{1}_{2}.chunk", chunkPos.x, chunkPos.y, chunkPos.z);
-        }
-
         private void WriteChunkToFile(Vector3Int chunkPos, Chunk chunk)
         {
-            var chunkDataPath = Path.Combine(world.dataDir, ChunkFileName(chunkPos));
-            
-            using (var fileStream = new FileStream(chunkDataPath, FileMode.Create))
-            {
-                var binaryWriter = new BinaryWriter(fileStream);
-                chunk.WriteBinary(binaryWriter);
-            }
+            world.database.WriteChunk(chunk);
         }
 
         public ChunkMesh GetNextMesh()
@@ -137,36 +120,16 @@ namespace MineQuest
                     populateQueue.TryDequeue(out chunk);
                     LoadedTotal += 1;
 
-                    // check the cache
+                    // check the cache otherwise load it from the database
                     Chunk cachedChunk = null;
                     if (chunkCache.TryGetValue(chunk.ChunkPos, out cachedChunk)) {
                         chunk.Blocks = cachedChunk.Blocks;
                         LoadedFromCache += 1;
                     }
-
-                    // check file on disk
-                    if (!chunk.IsPopulated)
+                    else
                     {
-                        var filePath = ChunkFileName(chunk.ChunkPos);
-                        if (File.Exists(filePath))
-                        {
-                            using (var fileStream = new FileStream(filePath, FileMode.Open))
-                            {
-                                var binaryReader = new BinaryReader(fileStream);
-                                chunk.ReadBinary(binaryReader);
-                            }
-
-                            LoadedFromDisk += 1;
-                        }
-                    }
-                    
-                    // in this case it is new, generate it 
-                    if (!chunk.IsPopulated)
-                    {
-                        chunk.Populate();
-                        world.chunkBuilder.Build(chunk);
-
-                        LoadedByBuilding += 1;
+                        world.database.ReadChunk(chunk);
+                        LoadedFromDisk += 1;
                     }
 
                     buildQueue.Enqueue(chunk);

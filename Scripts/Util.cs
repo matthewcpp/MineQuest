@@ -64,5 +64,10 @@ namespace MineQuest
             else
                 return 0;
         }
+        
+        public static float MapValue(float value, float origmin, float origmax, float newmin, float newmax)
+        {
+            return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
+        }
     }
 }
