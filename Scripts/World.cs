@@ -32,46 +32,47 @@ namespace MineQuest
         private List<Chunk> pruneList = new List<Chunk>();
 
         public Interaction Interaction { get; private set; }
+        public bool WorldLoaded { get { return data.database.IsOpen; } }
         
 
         public int ChunkCount { get { return data.chunks.Count; } }
 
-        private void Start()
+        private void Awake()
         {
             data.textureAtlas = new TextureAtlas(blockMaterial, transparentBlockMaterial);
             data.transform = this.transform;
             data.chunkPool = new ChunkPool(this.transform);
 
             chunkManager = new ChunkManager(data);
-            Interaction = new Interaction(data);
+        }
 
-            SetupWorld();
+        public float GetWorldHeight(float worldX, float worldY)
+        {
+            // todo: remove chunk builder from here.
+            return data.chunkBuilder.WorldHeight(worldX, worldY) + 1;
+        }
+
+        public void Open(string filePath)
+        {
+            data.database.Open(filePath);
+        }
+
+        public void LoadInitial()
+        {
+            var initialChunkPos = GetChunkPos(player.transform.position);
+            LoadChunks(initialChunkPos);
+            chunkManager.SerialProcessChunks();
+            while (InsertNextChunkMesh());
+
+            Interaction = new Interaction(data);
 
             chunkManager.Start();
         }
 
-        private void SetupWorld()
-        {
-            // determine the correct initial position for the player
-            // todo: remove chunk builder from here.
-            var playerPos = player.transform.position;
-            playerPos.y = data.chunkBuilder.WorldHeight(playerPos.x, playerPos.z) + 1;
-
-            // load the initial chunks around the player
-            var initialChunkPos = GetChunkPos(playerPos);
-            LoadChunks(initialChunkPos);
-            chunkManager.SerialProcessChunks();
-            while(InsertNextChunkMesh());
-
-            // temp...use of FPS controller
-            var characterController = player.GetComponent<CharacterController>();
-            characterController.enabled = false;
-            player.transform.position = playerPos;
-            characterController.enabled = true;
-        }
-
         private void Update()
         {
+            if (!WorldLoaded) return;
+
             var playerChunkPos = GetChunkPos(player.transform.position);
 
             if (playerChunkPos != previousChunkPos)
@@ -86,7 +87,8 @@ namespace MineQuest
 
         private void LateUpdate()
         {
-            UpdateDirtyChunks();
+            if (WorldLoaded)
+                UpdateDirtyChunks();
         }
 
         bool InsertNextChunkMesh()
@@ -149,6 +151,7 @@ namespace MineQuest
         private void OnDestroy()
         {
             chunkManager.Stop();
+            data.database.Close();
         }
 
         private void LoadChunks(Vector3Int chunkPos)

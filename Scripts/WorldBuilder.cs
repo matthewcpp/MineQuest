@@ -6,17 +6,17 @@ using UnityEngine;
 
 namespace MineQuest
 {
-    class WorldBuilder
+    public class WorldBuilder
     {
         WorldData world = new WorldData();
 
-        public bool IsBuilding { get; private set; }
-        public int TotalChunks { get { return GetTotalChunks(); } }
+        public bool IsBuilding { get; private set; } = false;
+        public int TotalChunks { get; private set; } = 0;
         public int CreatedChunks { get; private set; } = 0;
+        public string FilePath { get; private set; }
 
         private Vector3Int min;
         private Vector3Int max;
-        private string filePath;
 
         public bool Build(string filePath, Vector3Int min, Vector3Int max)
         {
@@ -24,11 +24,14 @@ namespace MineQuest
 
             this.min = min;
             this.max = max;
-            this.filePath = filePath;
+            FilePath = filePath;
             CreatedChunks = 0;
             IsBuilding = true;
             
-            world.database.Create(filePath, min, max);
+            world.database.Create(FilePath, min, max);
+
+            var worldSize = world.database.Size;
+            TotalChunks = worldSize.x * worldSize.y * worldSize.z;
 
             var thread = new Thread(()=> { WriteChunks(); });
             thread.Start();
@@ -56,12 +59,6 @@ namespace MineQuest
             
             world.database.Close();
             Debug.Log(string.Format("Done! Wrote: {0} chunks", CreatedChunks));
-        }
-
-        private int GetTotalChunks()
-        {
-            var worldSize = world.database.Size;
-            return worldSize.x * worldSize.y * worldSize.z;
         }
     }
 }
