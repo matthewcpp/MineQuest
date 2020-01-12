@@ -138,7 +138,7 @@ namespace MineQuest
             {
                 var neighbor = Util.GetNeighboringChunkForBlock(Chunk, neighborX, neighborY, neighborZ);
                 
-                if (neighbor != null && neighbor.IsPopulated)
+                if (neighbor != null)
                     return neighbor.Blocks[Util.GetNeighborBlockIndex(neighborX), Util.GetNeighborBlockIndex(neighborY), Util.GetNeighborBlockIndex(neighborZ)].IsSolid;
                 else // if neighbor is null then we have hit a world boundary 
                     return false;

@@ -8,7 +8,7 @@ namespace MineQuest
     {
         public void Build(Chunk chunk)
         {
-            var woldPos = chunk.WorldPos;
+            var worldPos = chunk.WorldPos;
 
             for (int z = 0; z < World.chunkSize; z++)
             {
@@ -16,7 +16,7 @@ namespace MineQuest
                 {
                     for (int x = 0; x < World.chunkSize; x++)
                     {
-                        Vector3 blockWorldPos = woldPos + new Vector3(x, y, z);
+                        Vector3 blockWorldPos = worldPos + new Vector3(x, y, z);
                         chunk.Blocks[x, y, z].type = DetermineBlockType(blockWorldPos);
                     }
                 }
@@ -68,19 +68,16 @@ namespace MineQuest
 
         public int WorldHeight(float x, float z)
         {
-            float height = Map(0.0f, 1.0f, 0.0f, maxHeight, Noise.BrownianMotion(x * heightSmooth, z * heightSmooth, heightOctaves, heightPersistence));
+            var val = Noise.BrownianMotion(x * heightSmooth, z * heightSmooth, heightOctaves, heightPersistence);
+            float height = Util.MapValue(val, 0.0f, 1.0f, 0.0f, maxHeight);
             return (int)height;
         }
 
         public static int StoneHeight(float x, float z)
         {
-            float height = Map(0, 1, 0, maxHeight - stoneHeightOffset, Noise.BrownianMotion(x * heightSmooth * 2, z * heightSmooth * 2, heightOctaves + 1, heightPersistence));
+            var val = Noise.BrownianMotion(x * heightSmooth * 2, z * heightSmooth * 2, heightOctaves + 1, heightPersistence);
+            float height = Util.MapValue(val, 0, 1, 0, maxHeight - stoneHeightOffset);
             return (int)height;
-        }
-
-        static float Map(float origmin, float origmax, float newmin, float newmax, float value)
-        {
-            return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
         }
     }
 }
