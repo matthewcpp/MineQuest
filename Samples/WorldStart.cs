@@ -8,8 +8,8 @@ public class WorldStart : MonoBehaviour
     public GameObject player;
 
     public MineQuest.WorldBuilder WorldBuilder { get; private set; }
-    private Vector3Int worldMin = new Vector3Int(-4, 0, -4);
-    private Vector3Int worldMax = new Vector3Int(4, 10, 4);
+    public Vector3Int worldMin = new Vector3Int(-4, 0, -4);
+    public Vector3Int worldMax = new Vector3Int(4, 10, 4);
 
     private float buildStartTime;
 

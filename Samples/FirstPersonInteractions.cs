@@ -6,7 +6,6 @@ public class FirstPersonInteractions : MonoBehaviour
 {
     public Camera playerCamera;
     public MineQuest.World world;
-    public GameObject markerPrefab;
 
     private GameObject marker;
 
